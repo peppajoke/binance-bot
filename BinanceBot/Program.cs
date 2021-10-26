@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using BinanceBot.Configuration;
 using BinanceBot.Service;
 
@@ -6,9 +7,9 @@ namespace BinanceBot
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            BotConfig config;
+            var config = new BotConfig();
             var bcs = new BotConfigurationService();
             var hasValidConfig = false;
             while (!hasValidConfig)
@@ -25,8 +26,30 @@ namespace BinanceBot
                 }
             }
             
-            
-            Console.WriteLine("Hello World!");
+            await SetUpServices(config);
+        }
+
+        private static async Task SetUpServices(BotConfig config)
+        {
+            // i know this sucks. I'll clean it up later
+            var clientProvider = new BinanceClientProvider(config);
+            var client = clientProvider.GetClient();
+            var socketClient = clientProvider.GetSocketClient();
+
+            var symbolService = new SymbolService(client);
+            var accountService = new BinanceAccountService(client, socketClient, symbolService);
+            var priceService = new PriceService(client, socketClient, symbolService);
+            var orderService = new OrderService(client, symbolService);
+            var costBasisService = new CostBasisService(client, socketClient, symbolService, accountService);
+
+            var botService = new BinanceBotService(priceService, orderService, costBasisService, symbolService, accountService);
+
+            await botService.Awaken();
+            Console.WriteLine("We are good to go!");
+            while(true)
+            {
+                // never sleep again.
+            }
         }
     }
 }

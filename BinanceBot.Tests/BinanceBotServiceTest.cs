@@ -1,3 +1,4 @@
+using BinanceBot.Service;
 using NUnit.Framework;
 
 namespace BinanceBot.Tests
@@ -7,7 +8,8 @@ namespace BinanceBot.Tests
         [SetUp]
         public void Setup()
         {
-            var svc = new BinanceBotService();
+            //ar priceSvc = new PriceService();
+            //var svc = new BinanceBotService(new BotConfig(), priceSvc);
         }
 
         [Test]
