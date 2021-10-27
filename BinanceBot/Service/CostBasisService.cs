@@ -81,16 +81,9 @@ namespace BinanceBot.Service
                     HandleOrderUpdate(data.Data.Symbol, data.Data.LastPriceFilled, data.Data.LastQuantityFilled, data.Data.Side);
                 }
             },
-            data => 
-            {
-            },
-            data => 
-            { 
-            },
-            data =>
-            {
-                
-            });
+            null,
+            null,
+            null);
         }
 
         private void HandleOrderUpdate(string symbol, decimal totalPrice, decimal totalQuantity, OrderSide side)
@@ -107,7 +100,7 @@ namespace BinanceBot.Service
 
         public decimal GetCostBasis(string symbol)
         {
-            return 0M;
+            return _costBasis[symbol];
         }
 
     }

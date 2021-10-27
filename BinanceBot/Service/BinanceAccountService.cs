@@ -53,15 +53,9 @@ namespace BinanceBot.Service
                 return;
             }
             var subscribeResult = await _socketClient.Spot.SubscribeToUserDataUpdatesAsync(listenKeyResultAccount.Data, 
-            data => 
-            {             
-            },
-            data => 
-            {
-            },
-            data => 
-            { 
-            },
+            null,
+            null,
+            null,
             data =>
             {
                 UpdateBalance(data.Data.Asset, data.Data.BalanceDelta);

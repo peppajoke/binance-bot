@@ -36,12 +36,13 @@ namespace BinanceBot.Service
                 symbol+"USD", OrderSide.Sell, OrderType.Limit, quantity: Math.Round(quantity, quantityPrecision), 
                 price: Math.Round(price, pricePrecision), timeInForce: TimeInForce.GoodTillCancel
             );
+            var thing = true;
         }
         public async Task CancelAllOrders()
         {
             foreach (var symbol in _symbolService.GetAllCoins())
             {
-                // await _client.Spot.Order.CancelAllOpenOrdersAsync(symbol + "USD");
+                await _client.Spot.Order.CancelAllOpenOrdersAsync(symbol + "USD");
             }
         }
     }

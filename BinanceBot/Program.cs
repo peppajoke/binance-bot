@@ -41,15 +41,11 @@ namespace BinanceBot
             var priceService = new PriceService(client, socketClient, symbolService);
             var orderService = new OrderService(client, symbolService);
             var costBasisService = new CostBasisService(client, socketClient, symbolService, accountService);
+            var dynamicSellService = new DynamicSellService(accountService, orderService, priceService, costBasisService);
 
-            var botService = new BinanceBotService(priceService, orderService, costBasisService, symbolService, accountService);
+            var botService = new BinanceBotService(priceService, orderService, costBasisService, symbolService, accountService, dynamicSellService);
 
             await botService.Awaken();
-            Console.WriteLine("We are good to go!");
-            while(true)
-            {
-                // never sleep again.
-            }
         }
     }
 }

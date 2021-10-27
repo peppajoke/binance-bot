@@ -28,6 +28,7 @@ namespace BinanceBot.Service
             var symbols = (await _client.Spot.System.GetExchangeInfoAsync()).Data.Symbols;
             foreach(var symbol in symbols)
             {
+                var cleanSymbol = symbol.Name.Replace("USD", "");
                 if (symbol.QuoteAsset == "USD")
                 {
                     
@@ -48,8 +49,8 @@ namespace BinanceBot.Service
                         pricePrecision++;
                         priceStepSize *= 10;
                     }
-                    _pricePrecision[symbol.Name] = pricePrecision;
-                    _quantityPrecision[symbol.Name] = quantityPrecision;
+                    _pricePrecision[cleanSymbol] = pricePrecision;
+                    _quantityPrecision[cleanSymbol] = quantityPrecision;
                 }
             }
         }
