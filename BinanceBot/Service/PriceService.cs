@@ -16,7 +16,6 @@ namespace BinanceBot.Service
         private readonly IBinanceSocketClient _socketClient;
 
         private readonly SymbolService _symbolService;
-        private HashSet<string> _existingSockets = new HashSet<string>();
 
         public PriceService(IBinanceClient client, IBinanceSocketClient socketClient, SymbolService symbolService)
         {
@@ -36,6 +35,9 @@ namespace BinanceBot.Service
                     UpdatePrice(cleanedSymbol, price.Price);
                 }
             }
+            // wait 10 seconds for orders to get wiped out... this is hacky i know
+            await Task.Delay(10000);
+            await SetUpSockets();
         }
 
         private async Task SetUpSockets()
@@ -50,24 +52,19 @@ namespace BinanceBot.Service
 
         private Task SetUpSocket(string symbol)
         {
-            if (_existingSockets.Contains(symbol))
-            {
-                return new Task(() => {});
-            }
             return _socketClient.Spot.SubscribeToTradeUpdatesAsync(symbol + "USD",
                 data => 
                 {
-                    HandleTradeSocket(data.Data);
-                    _existingSockets.Add(symbol);
+                    Task.Run(() => {HandleTradeSocket(data.Data);});
                 });
         }
 
         private async void HandleTradeSocket(BinanceStreamTrade trade)
         {
-            _marketPrices[trade.Symbol] = trade.Price;
+            UpdatePrice(trade.Symbol.Replace("USD", ""), trade.Price);
         }
 
-        private void UpdatePrice(string symbol, decimal price)
+        private async void UpdatePrice(string symbol, decimal price)
         {
             _marketPrices[symbol] = price;
         }

@@ -26,6 +26,7 @@ namespace BinanceBot.Service
                 symbol+"USD", OrderSide.Buy, OrderType.Limit, quantity: Math.Round(quantity, quantityPrecision), 
                 price: Math.Round(price, pricePrecision), timeInForce: TimeInForce.GoodTillCancel
             );
+            var thing = "stuff";
         }
 
         public async Task Sell(string symbol, decimal price, decimal quantity)

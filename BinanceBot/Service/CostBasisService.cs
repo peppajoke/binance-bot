@@ -78,7 +78,7 @@ namespace BinanceBot.Service
             {
                 if (data.Data.Status == OrderStatus.Filled || data.Data.Status == OrderStatus.PartiallyFilled)
                 {
-                    HandleOrderUpdate(data.Data.Symbol, data.Data.LastPriceFilled, data.Data.LastQuantityFilled, data.Data.Side);
+                    HandleOrderUpdate(data.Data.Symbol.Replace("USD", ""), data.Data.LastPriceFilled, data.Data.LastQuantityFilled, data.Data.Side);
                 }
             },
             null,
@@ -88,6 +88,10 @@ namespace BinanceBot.Service
 
         private void HandleOrderUpdate(string symbol, decimal totalPrice, decimal totalQuantity, OrderSide side)
         {
+            if (!_costBasis.ContainsKey(symbol))
+            {
+                return;
+            }
             if (side == OrderSide.Buy)
             {
                 _costBasis[symbol] += totalPrice;
@@ -100,7 +104,11 @@ namespace BinanceBot.Service
 
         public decimal GetCostBasis(string symbol)
         {
-            return _costBasis[symbol];
+            if (symbol is null || symbol == "")
+            {
+                return 0M;
+            }
+            return _costBasis[symbol];       
         }
 
     }
