@@ -52,10 +52,18 @@ namespace BinanceBot.Service
         public async Task Cycle()
         {
             await _orderService.CancelAllOrders();
-            var trySellTasks = _symbolService.GetAllCoins().Select(x=> _dynamicSellService.TrySell(x));
-            var tryBuyTasks = _symbolService.GetAllCoins().Select(x=> _dynamicBuyService.TryBuy(x));
+            foreach (var coin in _symbolService.GetAllCoins())
+            {
+                await _dynamicSellService.TrySell(coin);
+                await Task.Delay(250);
+            }
 
-            await Task.WhenAll(trySellTasks.Concat(tryBuyTasks));
+            foreach (var coin in _symbolService.GetAllCoins())
+            {
+                await _dynamicBuyService.TryBuy(coin);
+                await Task.Delay(250);
+                // binance doesn't like more than 100 orders in 10 seconds, so we add a little delay here.
+            }
         }
     }
 }

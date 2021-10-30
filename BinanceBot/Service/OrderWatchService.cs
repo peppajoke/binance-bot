@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using Binance.Net.Interfaces;
 using Binance.Net.Enums;
+using Binance.Net.Objects.Spot.UserStream;
+using System.Text;
 
 namespace BinanceBot.Service
 {
@@ -35,7 +37,7 @@ namespace BinanceBot.Service
             var subscribeResult = await _socketClient.Spot.SubscribeToUserDataUpdatesAsync(listenKeyResultAccount.Data, 
             data => 
             {
-                HandleOrderUpdate(data.Data.Symbol.Replace("USD" , ""), data.Data.Side, data.Data.Status);
+                Task.Run(() => { HandleOrderUpdate(data.Data.Symbol.Replace("USD" , ""), data.Data.Side, data.Data.Status); MessageOrder(data.Data);});
             },
             null,
             null,
@@ -51,6 +53,19 @@ namespace BinanceBot.Service
             {
                 Console.WriteLine("Listening for account updates...");
             }
+        }
+        private void MessageOrder(BinanceStreamOrderUpdate order)
+        {
+            if (order.Status != OrderStatus.Filled)
+            {
+                return;
+            }
+
+            var sb  = new StringBuilder();
+            sb.Append(order.Side == OrderSide.Buy ? "Bought " : "Sold ");
+            sb.Append(order.QuantityFilled + " " + order.Symbol + " at $" + order.Price);
+
+            Console.WriteLine(sb.ToString());
         }
 
         private async void HandleOrderUpdate(string symbol, OrderSide side, OrderStatus status)

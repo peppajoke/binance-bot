@@ -14,19 +14,23 @@ namespace BinanceBot.Service
         private readonly SymbolService _symbolService;
         private readonly BinanceAccountService _accountService;
 
+        private readonly PriceService _priceService;
+
         private Dictionary<string, decimal> _costBasis = new Dictionary<string, decimal>();
-        public CostBasisService(IBinanceClient client, IBinanceSocketClient socketClient, SymbolService symbolService, BinanceAccountService accountService)
+        public CostBasisService(IBinanceClient client, IBinanceSocketClient socketClient, SymbolService symbolService, BinanceAccountService accountService, PriceService priceService)
         {
             _client = client;
             _socketClient = socketClient;
             _symbolService = symbolService;
             _accountService = accountService;
+            _priceService = priceService;
         }
 
         public async Task Awaken()
         {
             await InitializeCostBasis();
             await SetUpSockets();
+            Console.WriteLine("Cost basis analysis complete.");
         }
 
         private async Task InitializeCostBasis()
@@ -61,6 +65,28 @@ namespace BinanceBot.Service
                     }
                 }
                 _costBasis[symbol] = costBasis;
+            }
+            MessageCostBasis();
+        }
+
+        private void MessageCostBasis()
+        {
+            foreach (var cost in _costBasis)
+            {
+                var symbol = cost.Key;
+                var costBasis = cost.Value;
+
+                if (costBasis == 0)
+                {
+                    continue;
+                }
+                var marketPrice = _priceService.GetPrice(symbol);
+                var heldQuantity = _accountService.GetHeldQuantity(symbol);
+
+                var profit = (heldQuantity * marketPrice) - costBasis;
+                var profitPercent = profit / costBasis;
+
+                Console.WriteLine(symbol + " cost basis: " + costBasis + " current value: $" + heldQuantity * marketPrice + " proft: $"+ profit + " (" + profitPercent + "%)" );    
             }
         }
 
@@ -99,6 +125,14 @@ namespace BinanceBot.Service
             else
             {
                 _costBasis[symbol] -= totalPrice;
+            }
+            try 
+            {
+                Console.WriteLine("Cost basis for " + symbol + " is now " + _costBasis[symbol] + " min sell price: $" + _costBasis[symbol] / _accountService.GetHeldQuantity(symbol));
+            }
+            catch(Exception e)
+            {
+
             }
         }
 

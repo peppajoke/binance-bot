@@ -77,6 +77,7 @@ namespace BinanceBot.Service
             if (symbol == "USD")
             {
                 _freeCash += delta;
+                Console.WriteLine("Free cash is now: $" + _freeCash);
             }
             else
             {
@@ -84,6 +85,7 @@ namespace BinanceBot.Service
                 {
                     _coins[symbol] += delta;
                 }
+                Console.WriteLine("You now hold " + _coins + " " + symbol);
             }
         }
 
@@ -95,14 +97,6 @@ namespace BinanceBot.Service
         public decimal GetHeldQuantity(string symbol)
         {
             return _coins[symbol];
-        }
-
-        private void UpdateHolding(string symbol, decimal delta)
-        {
-            lock(_coins)
-            {
-                _coins[symbol] += delta;
-            }
         }
     }
 }

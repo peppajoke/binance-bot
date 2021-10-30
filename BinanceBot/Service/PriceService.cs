@@ -38,6 +38,7 @@ namespace BinanceBot.Service
             // wait 10 seconds for orders to get wiped out... this is hacky i know
             await Task.Delay(10000);
             await SetUpSockets();
+            Console.WriteLine("Listening for price updates...");
         }
 
         private async Task SetUpSockets()

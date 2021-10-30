@@ -26,7 +26,10 @@ namespace BinanceBot.Service
                 symbol+"USD", OrderSide.Buy, OrderType.Limit, quantity: Math.Round(quantity, quantityPrecision), 
                 price: Math.Round(price, pricePrecision), timeInForce: TimeInForce.GoodTillCancel
             );
-            var thing = "stuff";
+            if (!response.Success)
+            {
+                Console.WriteLine("Failed to buy " + symbol + ": " + response.Error.Message);
+            }
         }
 
         public async Task Sell(string symbol, decimal price, decimal quantity)
@@ -41,6 +44,7 @@ namespace BinanceBot.Service
         }
         public async Task CancelAllOrders()
         {
+            Console.WriteLine("Cancelling all open orders...");
             foreach (var symbol in _symbolService.GetAllCoins())
             {
                 await _client.Spot.Order.CancelAllOpenOrdersAsync(symbol + "USD");
