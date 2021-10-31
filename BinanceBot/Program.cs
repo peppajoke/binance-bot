@@ -56,7 +56,7 @@ namespace BinanceBot
             
             while(true)
             {
-                var endOfLife = DateTime.Now.AddHours(1);
+                var endOfLife = DateTime.Now.AddHours(6);
                 while(endOfLife > DateTime.Now)
                 {
 

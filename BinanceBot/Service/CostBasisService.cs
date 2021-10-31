@@ -102,9 +102,9 @@ namespace BinanceBot.Service
             var subscribeResult = await _socketClient.Spot.SubscribeToUserDataUpdatesAsync(listenKeyResultAccount.Data, 
             data => 
             {
-                if (data.Data.Status == OrderStatus.Filled || data.Data.Status == OrderStatus.PartiallyFilled)
+                if (data.Data.Status == OrderStatus.Filled)
                 {
-                    HandleOrderUpdate(data.Data.Symbol.Replace("USD", ""), data.Data.LastPriceFilled, data.Data.LastQuantityFilled, data.Data.Side);
+                    HandleOrderUpdate(data.Data.Symbol.Replace("USD", ""), data.Data.Price, data.Data.QuantityFilled, data.Data.Side);
                 }
             },
             null,
