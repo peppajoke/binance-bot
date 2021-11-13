@@ -31,22 +31,22 @@ namespace BinanceBot.Service
 
         private async Task Buy(string symbol)
         {
+
+            var marketPrice = _priceService.GetPrice(symbol);
             try
             {
                 var targetSpend = _config.HoardCoins.Contains(symbol) ? 30 : 11;
-                var costBasis = _costBasisService.GetCostBasis(symbol);
+                var boughtPrice = _costBasisService.GetAveragePriceBought(symbol);
                 var cash = _accountService.GetAvailableCash();
-                var marketPrice = _priceService.GetPrice(symbol);
                 if (cash < targetSpend)
                 {
                     return;
                 }
                 var heldQuantity = _accountService.GetHeldQuantity(symbol);
                 decimal targetPrice;
-                if (costBasis > 0)
+                if (boughtPrice > 0)
                 {
-                    var minPrice = costBasis / heldQuantity;
-                    targetPrice = Math.Min(minPrice, marketPrice) * .99M;
+                    targetPrice = Math.Min(boughtPrice, marketPrice) * .99M;
                 }
                 else
                 {
@@ -60,7 +60,7 @@ namespace BinanceBot.Service
             }
             catch(Exception e)
             {
-                Console.WriteLine("failed to buy " + symbol+ ": " + e.Message);
+                await _orderService.Buy(symbol, marketPrice, 11 / marketPrice);
             }
         }
     }

@@ -38,22 +38,27 @@ namespace BinanceBot.Service
             }
             try 
             {
-                var costBasis = _costBasisService.GetCostBasis(symbol);
-                if (costBasis == 0) 
+                var boughtPrice = _costBasisService.GetAveragePriceBought(symbol);
+                if (boughtPrice == 0) 
                 {
                     return;
                 }
                 var heldQuantity = _accountService.GetHeldQuantity(symbol);
                 var marketPrice = _priceService.GetPrice(symbol);
-                var currentProfitability = (heldQuantity * marketPrice) / costBasis;
-                var targetProfitability = Math.Max(1.03M, currentProfitability) + .07M;
-                var targetPrice = (targetProfitability * costBasis) / heldQuantity;
-                var targetQuantityRatio = Math.Min((targetProfitability - 1) / 2, 1);
-                var targetQuantity = targetQuantityRatio * heldQuantity;
 
-                if (targetQuantity * targetPrice < 10M)
+                var targetPrice = Math.Max(boughtPrice * 1.04M, marketPrice);
+
+                if (_accountService.Liquidity() > .5M)
                 {
-                    targetQuantity = 25M / targetPrice;
+                    // our liquidity is good, set an additional 1% above market sell rate
+                    targetPrice *= 1.01M;
+                }
+
+                var targetQuantity = heldQuantity * Math.Min(1M, (targetPrice / 5) / boughtPrice);
+
+                if (targetQuantity * targetPrice < 11M)
+                {
+                    targetQuantity = 11M / targetPrice;
                 }
 
                 if (targetQuantity * targetPrice < 10M)

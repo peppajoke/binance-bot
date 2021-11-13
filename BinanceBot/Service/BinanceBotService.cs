@@ -43,10 +43,9 @@ namespace BinanceBot.Service
             );
 
             await _costBasisService.Awaken();
+            await _orderWatchService.Awaken();
 
             await Cycle();
-
-            await Task.WhenAll(_orderWatchService.Awaken());
         }
 
         public async Task Cycle()

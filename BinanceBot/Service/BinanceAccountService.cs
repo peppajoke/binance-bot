@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Binance.Net.Interfaces;
 using Binance.Net.Interfaces.SubClients;
+using Binance.Net.Objects.Spot.UserStream;
 
 namespace BinanceBot.Service
 {
@@ -15,17 +16,31 @@ namespace BinanceBot.Service
         private readonly IBinanceClient _client;
         private readonly IBinanceSocketClient _socketClient;
         private readonly SymbolService _symbolService;
-        public BinanceAccountService(IBinanceClient client, IBinanceSocketClient socketClient, SymbolService symbolService)
+        private readonly PriceService _priceService;
+        public BinanceAccountService(IBinanceClient client, IBinanceSocketClient socketClient, SymbolService symbolService, PriceService priceService)
         {
             _client = client;
             _socketClient = socketClient;
             _symbolService = symbolService;
+            _priceService = priceService;
         }
 
         public async Task Awaken()
         {
             await InitializeAssets();
             await SetUpSockets();
+        }
+
+        public decimal Liquidity()
+        {
+            var totalValue = 0M;
+            foreach(var coin in _coins)
+            {
+                totalValue += coin.Value * _priceService.GetPrice(coin.Key);
+            }
+            totalValue += _freeCash;
+
+            return _freeCash / totalValue;
         }
 
         private async Task InitializeAssets()
@@ -55,11 +70,11 @@ namespace BinanceBot.Service
             var subscribeResult = await _socketClient.Spot.SubscribeToUserDataUpdatesAsync(listenKeyResultAccount.Data, 
             null,
             null,
-            null,
             data =>
             {
-                UpdateBalance(data.Data.Asset, data.Data.BalanceDelta);
-            });
+                UpdateBalances(data.Data.Balances);
+            },
+            null);
 
             if (!subscribeResult.Success)
             {
@@ -72,20 +87,23 @@ namespace BinanceBot.Service
             }
         }
 
-        private void UpdateBalance(string symbol, decimal delta)
+        private void UpdateBalances(IEnumerable<BinanceStreamBalance> balances)
         {
-            if (symbol == "USD")
+            foreach(var balance in balances)
             {
-                _freeCash += delta;
-                Console.WriteLine("Free cash is now: $" + _freeCash);
-            }
-            else
-            {
-                lock(_coins)
+                if (balance.Asset == "USD")
                 {
-                    _coins[symbol] += delta;
+                    _freeCash = balance.Free;
+                    Console.WriteLine("Free cash is now: $" + _freeCash);
                 }
-                Console.WriteLine("You now hold " + _coins + " " + symbol);
+                else
+                {
+                    lock(_coins)
+                    {
+                        _coins[balance.Asset] = balance.Free;
+                    }
+                    Console.WriteLine("You now hold " + _coins[balance.Asset] + " " + balance.Asset);
+                }
             }
         }
 

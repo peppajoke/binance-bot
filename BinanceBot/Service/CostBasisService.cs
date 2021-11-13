@@ -16,7 +16,7 @@ namespace BinanceBot.Service
 
         private readonly PriceService _priceService;
 
-        private Dictionary<string, decimal> _costBasis = new Dictionary<string, decimal>();
+        private Dictionary<string, CostBasis> _costBasis = new Dictionary<string, CostBasis>();
         public CostBasisService(IBinanceClient client, IBinanceSocketClient socketClient, SymbolService symbolService, BinanceAccountService accountService, PriceService priceService)
         {
             _client = client;
@@ -64,30 +64,34 @@ namespace BinanceBot.Service
                         }
                     }
                 }
-                _costBasis[symbol] = costBasis;
+                _costBasis[symbol] = new CostBasis () {Spend = costBasis, Quantity = quantityHeld};
             }
             MessageCostBasis();
         }
 
         private void MessageCostBasis()
         {
+            var totalCost = 0M;
             foreach (var cost in _costBasis)
             {
                 var symbol = cost.Key;
                 var costBasis = cost.Value;
 
-                if (costBasis == 0)
+                if (costBasis.Spend == 0)
                 {
                     continue;
                 }
+
+                totalCost += costBasis.Spend;
                 var marketPrice = _priceService.GetPrice(symbol);
                 var heldQuantity = _accountService.GetHeldQuantity(symbol);
 
-                var profit = (heldQuantity * marketPrice) - costBasis;
-                var profitPercent = profit / costBasis;
+                var profit = (heldQuantity * marketPrice) - costBasis.Spend;
+                var profitPercent = profit / costBasis.Spend;
 
-                Console.WriteLine(symbol + " cost basis: " + costBasis + " current value: $" + heldQuantity * marketPrice + " proft: $"+ profit + " (" + profitPercent + "%)" );    
+                Console.WriteLine(symbol + " cost basis: $" + costBasis.Spend + " current value: $" + heldQuantity * marketPrice + " proft: $"+ profit + " (" + profitPercent + "%)" );    
             }
+            Console.WriteLine("Total Cost: $" + totalCost);
         }
 
         private async Task SetUpSockets()
@@ -112,7 +116,7 @@ namespace BinanceBot.Service
             null);
         }
 
-        private void HandleOrderUpdate(string symbol, decimal totalPrice, decimal totalQuantity, OrderSide side)
+        private void HandleOrderUpdate(string symbol, decimal price, decimal quantity, OrderSide side)
         {
             if (!_costBasis.ContainsKey(symbol))
             {
@@ -120,15 +124,16 @@ namespace BinanceBot.Service
             }
             if (side == OrderSide.Buy)
             {
-                _costBasis[symbol] += totalPrice;
+                _costBasis[symbol].AddCoins(quantity, price);
             }
             else
             {
-                _costBasis[symbol] -= totalPrice;
+                _costBasis[symbol].SubtractCoins(quantity);
             }
+            Console.WriteLine("Captured order: " + symbol + ": " + price+ "...." + quantity);
             try 
             {
-                Console.WriteLine("Cost basis for " + symbol + " is now " + _costBasis[symbol] + " min sell price: $" + _costBasis[symbol] / _accountService.GetHeldQuantity(symbol));
+                Console.WriteLine("Cost basis for " + symbol + " is now " + _costBasis[symbol] + " min sell price: $" + _costBasis[symbol].AveragePriceBought);
             }
             catch(Exception e)
             {
@@ -142,8 +147,36 @@ namespace BinanceBot.Service
             {
                 return 0M;
             }
-            return _costBasis[symbol];       
+            return _costBasis[symbol].Spend;       
         }
 
+        public decimal GetAveragePriceBought(string symbol)
+        {
+            if (symbol is null || symbol == "")
+            {
+                return 0M;
+            }
+            return _costBasis[symbol].AveragePriceBought;       
+        }
+    }
+
+    class CostBasis
+    {
+        public decimal Quantity {get;set;}
+        public decimal Spend { get;set; }
+
+        public decimal AveragePriceBought => Spend/Quantity;
+
+        public void SubtractCoins(decimal quantity)
+        {
+            Spend -= AveragePriceBought * quantity;
+            Quantity -= quantity;
+        }
+
+        public void AddCoins(decimal quantity, decimal price)
+        {
+            Spend += price * quantity;
+            Quantity += quantity;
+        }
     }
 }

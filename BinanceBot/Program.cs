@@ -37,9 +37,9 @@ namespace BinanceBot
             var socketClient = clientProvider.GetSocketClient();
 
             var symbolService = new SymbolService(client);
-            var accountService = new BinanceAccountService(client, socketClient, symbolService);
-            var orderService = new OrderService(client, symbolService);
             var priceService = new PriceService(client, socketClient, symbolService);
+            var accountService = new BinanceAccountService(client, socketClient, symbolService, priceService);
+            var orderService = new OrderService(client, symbolService);
             var costBasisService = new CostBasisService(client, socketClient, symbolService, accountService, priceService);
             var dynamicBuyService = new DynamicBuyService(accountService, orderService, costBasisService, priceService, config);
             var dynamicSellService = new DynamicSellService(accountService, orderService, priceService, costBasisService, config);
